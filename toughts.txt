@@ -1,0 +1,24 @@
+
+1. Generate camera ray (OpenCL/CPU dependent)
+2. Intersection test (Embree, RadeonRays, OpenCL(?))
+3. Evaulate BSDF (VexCL)
+4. Integrate (VexCL, OpenCL)
+5. Repeat 3 and 4
+
+Must have CPU OpenCL device to make use of Embree effcently
+Or everything must be in VexCL and thus use it's ablity to JIT
+Unfortuantly Halide/TVM don't support custom structures. Otherwise they 
+will be a better option
+
+VexCL's Backend is determined at compile time... Which is a problem that
+I can't have the JIT backend and the OpenCL backen at the same time.
+(Maybe possible with some tricks? But how about the symbols?)
+
+Develop the CPU(Embree) version first since it is the easiest. Then develop
+OpenCL and Vulkan version later. Will need some serious change to make that
+work though. Hold tight.
+
+Maybe compact BVH support?
+
+Switch from SFML to GLEW (Use SFML for convience for now)
+
