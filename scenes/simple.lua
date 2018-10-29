@@ -15,7 +15,6 @@ end
 t = 0
 
 function update()
-	-- incClearFrame()
 	t = t + 0.01
 	incLookAt(float3.new(t,0,1),
 		float3.new(t,0,0),

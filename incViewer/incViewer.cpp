@@ -50,6 +50,8 @@ std::atomic<float> frame_time = -1;
 std::queue<sf::Event> sfml_events;
 std::mutex event_access_lock;
 std::atomic<bool> frame_clear_request;
+std::map<Mesh const*, size_t> mesh_id_map;
+std::vector<float4> frame_data;
 
 sol::state lua;
 
@@ -73,11 +75,14 @@ void renderLoop(sf::Window* window)
 				render_buffer.create(window_width, window_height);
 				render_buffer.clear();
 				renderer.setup(render_buffer, num_tasks);
+				frame_data.resize(window_width*window_height);
 			}
 		}
 		event_access_lock.unlock();
 
 		renderer.render(render_buffer, &scene, camera);
+		for(int i=0;i<render_buffer.width()*render_buffer.height();i++)
+			frame_data[i] = render_buffer.constBuffer()[i];
 		frame_updated = true;
 
 		auto end = high_resolution_clock::now();
@@ -131,6 +136,7 @@ void incMainLoop()
 	scene.add(scene_root_node);
 	scene.commit();
 	render_buffer.create(window_width, window_height);
+	frame_data.resize(window_width*window_height);
 	renderer.setup(render_buffer, num_tasks);
 	camera.aspect_ratio = (float)window_width/window_height;
 
@@ -169,7 +175,7 @@ void incMainLoop()
 		window.pushGLStates();
 			//Update if frame is updated
 			if(frame_updated == true) {
-				const float* raw_frame = (const float*)render_buffer.constBuffer();
+				const float* raw_frame = (const float*)frame_data.data();
 				surface.setTexture(raw_frame, render_buffer.width(), render_buffer.height());
 				frame_updated = false;
 			}
@@ -215,7 +221,7 @@ void incLookAt(float3 pos, float3 target, float3 up)
 	camera.right = float4(right, 0);
 }
 
-void incMesh(std::vector<float3> vertices, std::vector<unsigned int> indices)
+int incMesh(std::vector<float3> vertices, std::vector<unsigned int> indices)
 {
 	//Mesh data sanity check
 	for(auto index : indices) {
@@ -233,8 +239,13 @@ void incMesh(std::vector<float3> vertices, std::vector<unsigned int> indices)
 	auto mesh_node = std::make_unique<SceneMeshNode>(mesh.get());
 	current_node->addChild(mesh_node.get());
 
+	int id = mesh_id_map.size();
+	mesh_id_map[mesh.get()] = id;
+
 	meshes.push_back(std::move(mesh));
 	scene_nodes.push_back(std::move(mesh_node));
+
+	return id;
 }
 
 void incSetNumTasks(size_t num)
