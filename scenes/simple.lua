@@ -1,9 +1,13 @@
 function setup()
+	-- tell Incarnate to show the surface normal
 	incSetRenderer("normal")
+
+	-- render with 8 threads
 	incSetNumTasks(8)
 end
 
 function world()
+	--setup world and camera
 	local up = float3.new(0, 1, 0)
 
 	incLookAt(float3.new(0,0,1),
@@ -23,10 +27,14 @@ end
 
 t = 0
 
-function update()
-	t = t + 0.01
-	incLookAt(float3.new(math.sin(t),1,math.cos(t)),
+function update(dt)
+	t = t + dt
+	local angle = t*0.5
+	-- rotate our view port
+	incLookAt(float3.new(math.sin(angle),2,math.cos(angle)),
 		float3.new(0,0,0),
 		float3.new(0,1,0))
+
+	--clear frame after update to render a new frame
 	incClearFrame()
 end

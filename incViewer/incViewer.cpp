@@ -90,7 +90,8 @@ void renderLoop(sf::Window* window)
 		frame_time = duration_cast<duration<double>>(end - start).count();
 
 		//Update scene
-		lua.script("update()");
+		std::function<void(double)> update = lua["update"];
+		update(frame_time);
 		if(frame_clear_request == true) {
 			frame_clear_request = false;
 			render_buffer.clear();
