@@ -17,6 +17,7 @@
 
 #define USE_MATH_DEFINES
 #include <cmath>
+#include <array>
 
 namespace Inc
 {

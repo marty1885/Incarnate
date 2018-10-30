@@ -33,10 +33,10 @@ void EmbreeAccelerator::intersect(Buffer<PathState>& paths)
 {
 	#pragma omp parallel
 	{
-		int thread_id = omp_get_thread_num();
-		int start_id = (float)thread_id/omp_get_num_threads()*paths.size();
-		int end_id = (float)(thread_id+1)/omp_get_num_threads()*paths.size();
-		int size = end_id - start_id;
+		size_t thread_id = omp_get_thread_num();
+		size_t start_id = (float)thread_id/omp_get_num_threads()*paths.size();
+		size_t end_id = (float)(thread_id+1)/omp_get_num_threads()*paths.size();
+		size_t size = end_id - start_id;
 		RTCRayHit* embree_rays = new RTCRayHit[size];
 
 		for(size_t i=0;i<size;i++)

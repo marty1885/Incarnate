@@ -213,7 +213,7 @@ void incLookAt(float3 pos, float3 target, float3 up)
 	float3 dir = normalize(target - pos);
 
 	camera.pos = float4(pos, 0);
-	float3 right = normalize(normalize(cross(dir, world_up_vector)));
+	float3 right = normalize(cross(dir, world_up_vector));
 	camera.up = float4(normalize(cross(right, dir)), 0);
 	camera.dir = float4(dir, 0);
 	camera.right = float4(right, 0);
