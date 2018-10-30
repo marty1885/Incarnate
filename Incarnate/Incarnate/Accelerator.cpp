@@ -42,13 +42,13 @@ void EmbreeAccelerator::intersect(Buffer<PathState>& paths)
 		for(size_t i=0;i<size;i++)
 		{
 			RTCRayHit &embree_ray = embree_rays[i];
-			embree_ray.ray.org_x = paths[i+start_id].orig.x;
-			embree_ray.ray.org_y = paths[i+start_id].orig.y;
-			embree_ray.ray.org_z = paths[i+start_id].orig.z;
+			embree_ray.ray.org_x = paths[i+start_id].rayhit.ray.orig.x;
+			embree_ray.ray.org_y = paths[i+start_id].rayhit.ray.orig.y;
+			embree_ray.ray.org_z = paths[i+start_id].rayhit.ray.orig.z;
 
-			embree_ray.ray.dir_x = paths[i+start_id].dir.x;
-			embree_ray.ray.dir_y = paths[i+start_id].dir.y;
-			embree_ray.ray.dir_z = paths[i+start_id].dir.z;
+			embree_ray.ray.dir_x = paths[i+start_id].rayhit.ray.dir.x;
+			embree_ray.ray.dir_y = paths[i+start_id].rayhit.ray.dir.y;
+			embree_ray.ray.dir_z = paths[i+start_id].rayhit.ray.dir.z;
 
 			embree_ray.ray.tnear = 0.0f;
 			embree_ray.ray.tfar = FLT_MAX;
@@ -66,11 +66,11 @@ void EmbreeAccelerator::intersect(Buffer<PathState>& paths)
 			if(embree_rays[i].hit.primID != RTC_INVALID_GEOMETRY_ID)
 			{
 				PathState& path = paths[i+start_id];
-				path.t = embree_rays[i].ray.tfar;
-				path.mesh_id = embree_rays[i].hit.geomID;
-				path.geom_id = embree_rays[i].hit.primID;
-				path.tex_u = embree_rays[i].hit.u;
-				path.tex_v = embree_rays[i].hit.v;
+				path.rayhit.hit.t = embree_rays[i].ray.tfar;
+				path.rayhit.hit.mesh_id = embree_rays[i].hit.geomID;
+				path.rayhit.hit.geom_id = embree_rays[i].hit.primID;
+				path.rayhit.hit.tex_u = embree_rays[i].hit.u;
+				path.rayhit.hit.tex_v = embree_rays[i].hit.v;
 			}
 		}
 		delete [] embree_rays;

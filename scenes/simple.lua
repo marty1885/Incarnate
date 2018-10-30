@@ -10,7 +10,7 @@ function world()
 	--setup world and camera
 	local up = float3.new(0, 1, 0)
 
-	incLookAt(float3.new(0,0,1),
+	incLookAt(float3.new(0,2,1),
 		float3.new(0,0,0),
 		float3.new(0,1,0))
 	incSetWorldUp(up)
