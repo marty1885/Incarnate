@@ -6,6 +6,7 @@
 #include <Incarnate/Scene.hpp>
 #include <Incarnate/Accelerator.hpp>
 #include <Incarnate/Ray.hpp>
+#include <Incarnate/FrameBuffer.hpp>
 
 #include <stdint.h>
 
@@ -30,81 +31,6 @@ Ray generateCameraRay(const PerspectiveCamera& cam, float2 uv)
 	return r;
 }
 
-class FrameBuffer
-{
-public:
-	FrameBuffer() = default;
-	void create(size_t w, size_t h, size_t c=3)
-	{
-		width_ = w;
-		height_ = h;
-		channels_ = c;
-		frame_buffer_.reallocate(w*h*c);
-		clear();
-	}
-
-	bool defined() const
-	{
-		return frame_buffer_.size() != 0;
-	}
-
-	void clear()
-	{
-		current_sample_ = 0;
-		auto data = frame_buffer_.data();
-		for(size_t i=0;i < frame_buffer_.size();i++)
-			data[i] = float4(0);
-		//TODO: clear device data
-	}
-
-	int width() const
-	{
-		return width_;
-	}
-
-	int height() const
-	{
-		return height_;
-	}
-
-	int channels() const
-	{
-		return channels_;
-	}
-
-	float4* rawBuffer()
-	{
-		return frame_buffer_.data();
-	}
-
-	const float4* constBuffer() const
-	{
-		return frame_buffer_.data();
-	}
-
-	size_t size() const
-	{
-		return frame_buffer_.size();
-	}
-
-	inline float4& operator[] (size_t i)
-	{
-		return frame_buffer_[i];
-	}
-
-	inline const float4& operator[] (size_t i) const
-	{
-		return frame_buffer_[i];
-	}
-
-	size_t current_sample_ = 0;
-protected:
-	Buffer<float4> frame_buffer_;
-	size_t width_;
-	size_t height_;
-	size_t channels_;
-};
-
 class Renderer
 {
 public:
@@ -117,22 +43,44 @@ public:
 		frame_buffer_ = &frame_buffer;
 	}
 
+	virtual void render(FrameBuffer& frame_buffer, Scene* scene, const PerspectiveCamera& camera) = 0;
+
+	void setAccelerator(Accelerator* accelerator)
+	{
+		accelerator_ = accelerator;
+	}
+
+protected:
+	Buffer<PathState> path_states_;
+	Buffer<PerspectiveCamera> camera_;
+	FrameBuffer* frame_buffer_ = nullptr;
+	size_t num_works_ = 0;
+	Accelerator* accelerator_;
+};
+
+class NormalRenderer : public Renderer
+{
+public:
+
+
 	void render(FrameBuffer& frame_buffer, Scene* scene, const PerspectiveCamera& camera)
 	{
 		camera_[0] = camera;
-		//First, generate all camera rays
+		//Stage 1, generate all camera rays
 		genCameraRays((int2){frame_buffer.width(), frame_buffer.height()}, num_works_);
 
 		accelerator_->intersect(path_states_);
 
-		//TEST: fill the screen with ray dir
-		//#pragma omp parallel for num_threads(num_works_)
+		//Sage 2 fill with normal if hit
 		float new_sample_weight = 1.f- (float)(frame_buffer.current_sample_)/(frame_buffer.current_sample_+1);
+		#pragma omp parallel for num_threads(num_works_)
 		for(size_t i=0;i<path_states_.size();i++) {
 			auto& s = path_states_[i];
 			float4 new_sample_color(0);
-			if(s.t > 0)
-				new_sample_color = float4(abs(float3(s.dir)), 0);
+			if(s.t > 0) {
+				float3 normal = float3(tirangle_normal(scene->meshes()[s.mesh_id]->triangle(s.geom_id)));
+				new_sample_color = float4(abs(normal), 0);
+			}
 			else
 				s.phase = PathPhase::Done;
 			frame_buffer[i] = new_sample_weight*new_sample_color + (1.f-new_sample_weight)*frame_buffer[i];
@@ -161,17 +109,5 @@ public:
 			s.t = -1;
 		}
 	}
-
-	void setAccelerator(Accelerator* accelerator)
-	{
-		accelerator_ = accelerator;
-	}
-
-protected:
-	Buffer<PathState> path_states_;
-	Buffer<PerspectiveCamera> camera_;
-	FrameBuffer* frame_buffer_ = nullptr;
-	size_t num_works_ = 0;
-	Accelerator* accelerator_;
 };
 }

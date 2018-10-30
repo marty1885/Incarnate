@@ -42,7 +42,7 @@ public:
 	{
 		std::array<float4, 3> vertices;
 		for(unsigned int i=0;i<3;i++)
-			vertices[i] = vertices_[indices_[i]];
+			vertices[i] = vertices_[indices_[index*3+i]];
 		return vertices;
 	}
 

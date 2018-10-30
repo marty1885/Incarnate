@@ -97,6 +97,11 @@ public:
 
 	SceneMeshNode() = default;
 
+	Mesh* mesh()
+	{
+		return mesh_;
+	}
+
 	Mesh* mesh_;
 };
 
@@ -122,15 +127,26 @@ public:
 		accelerator_->commitScene();
 	}
 
+	Mesh** meshes()
+	{
+		return meshes_.data();
+	}
+
 	std::vector<SceneNode*> nodes_;
-	Accelerator* accelerator_;
+	std::vector<Mesh*> meshes_;
+
+	Accelerator* accelerator_ = nullptr;
 
 protected:
 	void addToAccelerator(SceneNode* current_node)
 	{
 		//TODO: Remove RTTI
-		if(dynamic_cast<SceneMeshNode*>(current_node) != nullptr)
-			accelerator_->addMesh(dynamic_cast<SceneMeshNode*>(current_node)->mesh_, translate(float3(0,0,0)));
+		auto ptr = dynamic_cast<SceneMeshNode*>(current_node);
+		if(ptr != nullptr) {
+			int id = meshes_.size();
+			meshes_.push_back(ptr->mesh());
+			accelerator_->addMesh(ptr->mesh(), translate(float3(0,0,0)), id);
+		}
 		for(auto child : current_node->childs)
 			addToAccelerator(child);
 	}

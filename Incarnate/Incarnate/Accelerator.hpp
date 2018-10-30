@@ -16,7 +16,7 @@ class Accelerator
 public:
 	virtual ~Accelerator() = default;
 
-	virtual void addMesh(Mesh* mesh, const float4x4& transform_matrix) = 0;
+	virtual void addMesh(Mesh* mesh, const float4x4& transform_matrix, unsigned int mesh_id) = 0;
 	virtual void commitScene() = 0;
 	virtual void intersect(Buffer<PathState>& rays) = 0;
 };
@@ -26,7 +26,7 @@ class EmbreeAccelerator : public Accelerator
 public:
 	EmbreeAccelerator()
 	{
-		device_ = rtcNewDevice("threads=0");
+		device_ = rtcNewDevice("threads=1");
 		embree_scene_ = rtcNewScene(device_);
 	}
 
@@ -42,7 +42,7 @@ public:
 		rtcInitIntersectContext(&context_);
 	}
 
-	virtual void addMesh(Mesh* mesh, const float4x4& transform_matrix) override;
+	virtual void addMesh(Mesh* mesh, const float4x4& transform_matrix, unsigned int mesh_id) override;
 
 	virtual void intersect(Buffer<PathState>& paths) override;
 

@@ -32,9 +32,10 @@ size_t num_tasks = 1;
 //Renderer stuff
 PerspectiveCamera camera;
 FrameBuffer render_buffer;
-Renderer renderer;
+std::unique_ptr<Renderer> renderer;
 Scene scene;
 std::unique_ptr<Accelerator> accelerator;
+std::string renderer_type = "normal";
 
 //Data managment stuff
 std::vector<std::unique_ptr<Mesh>> meshes;
@@ -74,13 +75,13 @@ void renderLoop(sf::Window* window)
 
 				render_buffer.create(window_width, window_height);
 				render_buffer.clear();
-				renderer.setup(render_buffer, num_tasks);
+				renderer->setup(render_buffer, num_tasks);
 				frame_data.resize(window_width*window_height);
 			}
 		}
 		event_access_lock.unlock();
 
-		renderer.render(render_buffer, &scene, camera);
+		renderer->render(render_buffer, &scene, camera);
 		for(int i=0;i<render_buffer.width()*render_buffer.height();i++)
 			frame_data[i] = render_buffer.constBuffer()[i];
 		frame_updated = true;
@@ -137,7 +138,7 @@ void incMainLoop()
 	scene.commit();
 	render_buffer.create(window_width, window_height);
 	frame_data.resize(window_width*window_height);
-	renderer.setup(render_buffer, num_tasks);
+	renderer->setup(render_buffer, num_tasks);
 	camera.aspect_ratio = (float)window_width/window_height;
 
 	//Use a seprate thread rendering the frames to maintain high GUI FPS
@@ -208,11 +209,7 @@ void incSetWorldUp(float3 up)
 
 void incLookAt(float3 pos, float3 target, float3 up)
 {
-	auto closeTo = [](float a, float b)->bool {return std::abs(a-b) < 1e-4f;};
 	float3 dir = normalize(target - pos);
-
-	if(closeTo(dot(up, dir), 0) == false)
-		std::cerr << "[WARN] Camera pointing direction and upward direction are not perpendicular. The rendered image might not be as expected.\n";
 
 	camera.pos = float4(pos, 0);
 	float3 right = normalize(normalize(cross(dir, world_up_vector)));
@@ -258,8 +255,17 @@ size_t incNumTasks()
 	return num_tasks;
 }
 
+void incSetRenderer(std::string type)
+{
+	renderer_type = type;
+}
+
 void incSetup()
 {
+	if(renderer_type == "normal")
+		renderer = std::make_unique<NormalRenderer>();
+	else
+		throw IncError("Renderer type " + renderer_type + "is not supported.");
 	auto node = std::make_unique<SceneNode>();
 	scene_root_node = node.get();
 	scene_nodes.push_back(std::move(node));
@@ -268,7 +274,7 @@ void incSetup()
 
 	accelerator = std::make_unique<EmbreeAccelerator>();
 	scene.setAccelerator(accelerator.get());
-	renderer.setAccelerator(accelerator.get());
+	renderer->setAccelerator(accelerator.get());
 }
 
 void incClearFrame()
@@ -298,12 +304,14 @@ int main(int argc, char** argv)
 	lua["incMesh"] = incMesh;
 	lua["_INC_VERSION"] = "0.0.1 prealpha";
 	lua["incClearFrame"] = incClearFrame;
-	incSetup();
+	lua["incSetRenderer"] = incSetRenderer;
 
 	//Execute the script (set up the scene)
 	lua.script_file(argv[1]);
 
 	lua.script("setup()");
+	incSetup();
+	lua.script("world()");
 
 	incMainLoop();
 

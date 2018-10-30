@@ -3,9 +3,11 @@
 #include <Incarnate/Core/Error.hpp>
 #include <Incarnate/Core/Math.hpp>
 
+#include <omp.h>
+
 using namespace Inc;
 
-void EmbreeAccelerator::addMesh(Mesh* mesh, const float4x4& transform_matrix)
+void EmbreeAccelerator::addMesh(Mesh* mesh, const float4x4& transform_matrix, unsigned int mesh_id)
 {
 	RTCGeometry geom = rtcNewGeometry(device_, RTC_GEOMETRY_TYPE_TRIANGLE);
 	rtcSetGeometryBuildQuality(geom,RTC_BUILD_QUALITY_HIGH);
@@ -23,46 +25,54 @@ void EmbreeAccelerator::addMesh(Mesh* mesh, const float4x4& transform_matrix)
 	}
 
 	rtcCommitGeometry(geom);
-	auto id = rtcAttachGeometry(embree_scene_,geom);
+	rtcAttachGeometryByID(embree_scene_,geom, mesh_id);
 	rtcReleaseGeometry(geom);
 }
 
 void EmbreeAccelerator::intersect(Buffer<PathState>& paths)
 {
-	RTCRayHit* embree_rays = new RTCRayHit[paths.size()];
-	for(size_t i=0;i<paths.size();i++)
+	#pragma omp parallel
 	{
-		RTCRayHit &embree_ray = embree_rays[i];
-		embree_ray.ray.org_x = paths[i].orig.x;
-		embree_ray.ray.org_y = paths[i].orig.y;
-		embree_ray.ray.org_z = paths[i].orig.z;
+		int thread_id = omp_get_thread_num();
+		int start_id = (float)thread_id/omp_get_num_threads()*paths.size();
+		int end_id = (float)(thread_id+1)/omp_get_num_threads()*paths.size();
+		int size = end_id - start_id;
+		RTCRayHit* embree_rays = new RTCRayHit[size];
 
-		embree_ray.ray.dir_x = paths[i].dir.x;
-		embree_ray.ray.dir_y = paths[i].dir.y;
-		embree_ray.ray.dir_z = paths[i].dir.z;
-
-		embree_ray.ray.tnear = 0.0f;
-		embree_ray.ray.tfar = FLT_MAX;
-
-		embree_ray.hit.geomID = RTC_INVALID_GEOMETRY_ID;
-		embree_ray.hit.primID = RTC_INVALID_GEOMETRY_ID;
-		embree_ray.ray.mask = -1;
-		embree_ray.ray.time = 0;
-	}
-
-	rtcIntersect1M(embree_scene_,&context_,embree_rays,paths.size(),sizeof(RTCRayHit));
-
-	for(size_t i=0;i<paths.size();i++)
-	{
-		if(embree_rays[i].hit.primID != RTC_INVALID_GEOMETRY_ID)
+		for(size_t i=0;i<size;i++)
 		{
-			PathState& path = paths[i];
-			path.t = embree_rays[i].ray.tfar;
-			path.mesh_id = embree_rays[i].hit.geomID;
-			path.geom_id = embree_rays[i].hit.primID;
-			path.tex_u = embree_rays[i].hit.u;
-			path.tex_v = embree_rays[i].hit.v;
+			RTCRayHit &embree_ray = embree_rays[i];
+			embree_ray.ray.org_x = paths[i+start_id].orig.x;
+			embree_ray.ray.org_y = paths[i+start_id].orig.y;
+			embree_ray.ray.org_z = paths[i+start_id].orig.z;
+
+			embree_ray.ray.dir_x = paths[i+start_id].dir.x;
+			embree_ray.ray.dir_y = paths[i+start_id].dir.y;
+			embree_ray.ray.dir_z = paths[i+start_id].dir.z;
+
+			embree_ray.ray.tnear = 0.0f;
+			embree_ray.ray.tfar = FLT_MAX;
+
+			embree_ray.hit.geomID = RTC_INVALID_GEOMETRY_ID;
+			embree_ray.hit.primID = RTC_INVALID_GEOMETRY_ID;
+			embree_ray.ray.mask = -1;
+			embree_ray.ray.time = 0;
 		}
+
+		rtcIntersect1M(embree_scene_,&context_,embree_rays,size,sizeof(RTCRayHit));
+
+		for(size_t i=0;i<size;i++)
+		{
+			if(embree_rays[i].hit.primID != RTC_INVALID_GEOMETRY_ID)
+			{
+				PathState& path = paths[i+start_id];
+				path.t = embree_rays[i].ray.tfar;
+				path.mesh_id = embree_rays[i].hit.geomID;
+				path.geom_id = embree_rays[i].hit.primID;
+				path.tex_u = embree_rays[i].hit.u;
+				path.tex_v = embree_rays[i].hit.v;
+			}
+		}
+		delete [] embree_rays;
 	}
-	delete [] embree_rays;
 }
