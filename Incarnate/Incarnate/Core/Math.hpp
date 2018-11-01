@@ -62,7 +62,7 @@ inline float2 abs(float2 v)
 	return glm::abs(v);
 }
 
-inline float4 tirangle_normal(std::array<float4, 3> triangle)
+inline float4 triangleNormal(std::array<float4, 3> triangle)
 {
 	auto normal = glm::cross(float3(triangle[1]-triangle[0]), float3(triangle[2]-triangle[0]));
 	return float4(normalize(normal), 0);

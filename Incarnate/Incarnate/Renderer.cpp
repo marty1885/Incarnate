@@ -17,7 +17,7 @@ void NormalRenderer::render(FrameBuffer& frame_buffer, Scene* scene, const Persp
 		auto& s = path_states_[i];
 		float4 new_sample_color(0);
 		if(s.rayhit.hit.t > 0) {
-			float3 normal = float3(tirangle_normal(scene->meshes()[s.rayhit.hit.mesh_id]->triangle(s.rayhit.hit.geom_id)));
+			float3 normal = float3(triangleNormal(scene->meshes()[s.rayhit.hit.mesh_id]->triangle(s.rayhit.hit.geom_id)));
 			new_sample_color = float4(abs(normal), 0);
 		}
 		else

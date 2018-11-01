@@ -13,8 +13,13 @@ class ComputeAPI
 public:
 	virtual DeviceBufferImpl* allocateMemory(size_t num_bytes) = 0;
 	virtual void init() = 0;
-	virtual void writeToDevice(DeviceBufferImpl memory, bool async) = 0;
-	virtual void readFromDevie(const DeviceBufferImpl& memory, bool async) = 0;
+	virtual void writeToDevice(DeviceBufferImpl* memory, void* data, bool async) = 0;
+	virtual void readFromDevie(const DeviceBufferImpl* memory, bool async) = 0;
+};
+
+class CPUCompluteAPI
+{
+public:
 };
 
 class OpenCLAPI : public ComputeAPI
