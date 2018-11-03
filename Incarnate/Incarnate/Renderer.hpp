@@ -8,6 +8,7 @@
 #include <Incarnate/Ray.hpp>
 #include <Incarnate/FrameBuffer.hpp>
 #include <Incarnate/Camera.hpp>
+#include <Incarnate/Texture.hpp>
 
 #include <array>
 
@@ -55,12 +56,18 @@ public:
 		accelerator_ = accelerator;
 	}
 
+	void setEnviromentMap(EnvironmentMap* env_map)
+	{
+		enviroment_map_ = env_map;
+	}
+
 protected:
 	Buffer<PathState> path_states_;
 	Buffer<PerspectiveCamera> camera_;
 	FrameBuffer* frame_buffer_ = nullptr;
 	size_t num_works_ = 0;
 	Accelerator* accelerator_ = nullptr;
+	EnvironmentMap* enviroment_map_ = nullptr;
 };
 
 class NormalRenderer : public Renderer

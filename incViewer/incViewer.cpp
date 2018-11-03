@@ -351,7 +351,10 @@ void incUseScriptDirectory(bool enable)
 
 void incEnviromentMap(int texture_id)
 {
+	if(textures.size() <= (size_t)texture_id)
+		throw IncError("Texture " + std::to_string(texture_id) + " does not exist.");
 	env_map = std::make_unique<SphereMap>(textures[texture_id].get());
+	renderer->setEnviromentMap(env_map.get());
 }
 
 int main(int argc, char** argv)

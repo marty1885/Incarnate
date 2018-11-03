@@ -45,8 +45,11 @@ void PathRenderer::render(FrameBuffer& frame_buffer, Scene* scene, const Perspec
 			float3 normal = float3(triangleNormal(scene->meshes()[s.rayhit.hit.mesh_id]->triangle(s.rayhit.hit.geom_id)));
 			new_sample_color = float4(abs(normal), 0);
 		}
-		else
+		else {
 			s.phase = PathPhase::Done;
+			if(enviroment_map_ != nullptr)
+				new_sample_color = enviroment_map_->getPixel(s.rayhit.ray.dir);
+		}
 		frame_buffer[i] = new_sample_weight*new_sample_color + (1.f-new_sample_weight)*frame_buffer[i];
 	}
 	frame_buffer.current_sample_ += 1;
