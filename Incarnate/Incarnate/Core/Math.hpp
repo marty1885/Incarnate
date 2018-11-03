@@ -74,4 +74,64 @@ inline float4 triangleNormal(std::array<float4, 3> triangle)
 	return float4(normalize(normal), 0);
 }
 
+inline float fastAcos(float x)
+{
+	float negate = float(x < 0);
+	x = std::abs(x);
+	float ret = -0.0187293f;
+	ret = ret * x;
+	ret = ret + 0.0742610f;
+	ret = ret * x;
+	ret = ret - 0.2121144f;
+	ret = ret * x;
+	ret = ret + 1.5707288f;
+	ret = ret * std::sqrt(1.0-x);
+	ret = ret - 2 * negate * ret;
+	return negate * 3.14159265358979 + ret;
+}
+
+inline float fastAtan(float z)
+{
+	const float n1 = 0.97239411f;
+	const float n2 = -0.19194795f;
+	return (n1 + n2 * z * z) * z;
+}
+
+
+inline float fastAtan2(float y, float x)
+{
+	constexpr float PI = M_PI;
+	constexpr float PI_2 = PI*0.5;
+	if (x != 0.0f)
+	{
+		if(std::abs(x) > std::abs(y))
+		{
+			const float z = y / x;
+			if(x > 0.f)
+				return fastAtan(z);// atan2(y,x) = atan(y/x) if x > 0
+			else if(y >= 0.f)
+				
+				return fastAtan(z) + PI;// atan2(y,x) = atan(y/x) + PI if x < 0, y >= 0
+			else
+				return fastAtan(z) - PI;// atan2(y,x) = atan(y/x) - PI if x < 0, y < 0
+		}
+		else // Use property atan(y/x) = PI/2 - atan(x/y) if |y/x| > 1.
+		{
+			const float z = x / y;
+			if(y > 0.f)
+				return -fastAtan(z) + PI_2;// atan2(y,x) = PI/2 - atan(x/y) if |y/x| > 1, y > 0
+			else
+				return -fastAtan(z) - PI_2;// atan2(y,x) = -PI/2 - atan(x/y) if |y/x| > 1, y < 0
+		}
+	}
+	else
+	{
+		if(y > 0.f) // x = 0, y > 0
+			return PI_2;
+		else if(y < 0.f) // x = 0, y < 0
+			return -PI_2;
+	}
+	return 0.0f; // x,y = 0. Could return NaN instead.
+}
+
 }

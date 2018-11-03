@@ -46,3 +46,22 @@ float4 HDRImage::getPixel(int2 coord) const
 	return image_[y*width()+x];
 }
 
+void SphereMap::setTexture(Texture* tex)
+{
+	texture_ = tex;
+}
+
+Texture* SphereMap::texture()
+{
+	return texture_;
+}
+
+float4 SphereMap::getPixel(float4 direction) const
+{
+	float2 uv;
+	const float4& v = direction;
+	uv.x = 0.5f - fastAtan2(v.x, v.z)*(float)M_1_PI*0.5f;
+	uv.y = -fastAcos(v.y)*(float)M_1_PI;
+	return texture_->getPixel(uv);
+}
+

@@ -47,6 +47,7 @@ std::vector<std::unique_ptr<Image>> images;
 std::vector<std::unique_ptr<Texture>> textures;
 bool use_script_diecttory = false;
 std::string root_doc_directory;
+std::unique_ptr<EnvironmentMap> env_map;
 
 
 //Application stuff
@@ -348,6 +349,11 @@ void incUseScriptDirectory(bool enable)
 	use_script_diecttory = enable;
 }
 
+void incEnviromentMap(int texture_id)
+{
+	env_map = std::make_unique<SphereMap>(textures[texture_id].get());
+}
+
 int main(int argc, char** argv)
 {
 	if(argc == 1) {
@@ -373,6 +379,7 @@ int main(int argc, char** argv)
 	lua["incSetRenderer"] = incSetRenderer;
 	lua["incImage"] = incImage;
 	lua["incUseScriptDirectory"] = incUseScriptDirectory;
+	lua["incEnviromentMap"] = incEnviromentMap;
 
 	//Execute the script (set up the scene)
 	root_doc_directory = directory(argv[1]);

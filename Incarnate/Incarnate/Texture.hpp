@@ -151,4 +151,22 @@ protected:
 };
 
 
+class EnvironmentMap
+{
+public:
+	virtual float4 getPixel(float4 vec) const = 0;
+protected:
+};
+
+class SphereMap : public EnvironmentMap
+{
+public:
+	SphereMap(Texture* tex) : texture_(tex) {}
+	float4 getPixel(float4 direction) const;
+	void setTexture(Texture* tex);
+	Texture* texture();
+protected:
+	Texture* texture_ = nullptr;
+};
+
 }
