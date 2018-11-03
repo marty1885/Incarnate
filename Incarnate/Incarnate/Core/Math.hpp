@@ -47,6 +47,12 @@ T normalize(T a, T b)
 	return glm::normalize(a, b);
 }
 
+template<typename T>
+T clamp(T x, T left, T right)
+{
+	return glm::clamp(x, left, right);
+}
+
 inline float3 abs(float3 v)
 {
 	return glm::abs(v);

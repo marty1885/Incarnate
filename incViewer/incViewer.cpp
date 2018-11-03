@@ -43,6 +43,10 @@ std::vector<std::unique_ptr<SceneNode>> scene_nodes;
 SceneNode* scene_root_node;
 SceneNode* current_node;
 std::stack<SceneNode*> node_stack;
+std::vector<std::unique_ptr<Image>> images;
+std::vector<std::unique_ptr<Texture>> textures;
+bool use_script_diecttory = false;
+std::string root_doc_directory;
 
 
 //Application stuff
@@ -203,6 +207,45 @@ void incMainLoop()
 	render_thread.join();
 }
 
+static inline bool isAlphabet(char ch)
+{
+	return (('A' >= ch && ch <= 'Z') || ('a' >= ch && ch <= 'z'));
+}
+
+
+std::string directory(const std::string& path)
+{
+	//Just incase we got a Windows-style path
+	std::string unix_style_path = path;
+	std::replace(unix_style_path.begin(), unix_style_path.end(), '\\', '/');
+	std::string directory;
+	auto index = unix_style_path.rfind('/');
+	if (std::string::npos != index)
+	 	directory = unix_style_path.substr(0, index);
+
+	if(directory.empty())
+		directory += ".";
+	directory += "/";
+	return directory;
+}
+
+std::string combinePath(const std::string& directory, const std::string& append_path)
+{
+	if(append_path[0] == '/' || append_path[0] == '~' || (isAlphabet(append_path[0]) && append_path[1] == ':'))
+		return append_path;
+	std::string res = directory;
+	if(res.back() == '/' && append_path[0] == '/')
+		res.pop_back();
+	return res + append_path;
+}
+
+std::string resolvePath(std::string path)
+{
+	if(use_script_diecttory == true)
+		return combinePath(root_doc_directory, path);
+	return path;
+}
+
 void incSetWorldUp(float3 up)
 {
 	world_up_vector = up;
@@ -246,6 +289,21 @@ int incMesh(std::vector<float3> vertices, std::vector<unsigned int> indices)
 	return id;
 }
 
+int incImage(std::string path)
+{
+	int id = (int)images.size();
+	auto image = std::make_unique<HDRImage>();
+	if(image->load(resolvePath(path)) == false)
+		throw IncError("Cannot load file: " + resolvePath(path));
+
+	auto texture = std::make_unique<Texture>();
+	texture->setImage(image.get());
+
+	images.push_back(std::move(image));
+	textures.push_back(std::move(texture));
+	return id;
+}
+
 void incSetNumTasks(size_t num)
 {
 	num_tasks = num;
@@ -285,6 +343,11 @@ void incClearFrame()
 	frame_clear_request = true;
 }
 
+void incUseScriptDirectory(bool enable)
+{
+	use_script_diecttory = enable;
+}
+
 int main(int argc, char** argv)
 {
 	if(argc == 1) {
@@ -308,8 +371,11 @@ int main(int argc, char** argv)
 	lua["_INC_VERSION"] = "0.0.1 prealpha";
 	lua["incClearFrame"] = incClearFrame;
 	lua["incSetRenderer"] = incSetRenderer;
+	lua["incImage"] = incImage;
+	lua["incUseScriptDirectory"] = incUseScriptDirectory;
 
 	//Execute the script (set up the scene)
+	root_doc_directory = directory(argv[1]);
 	lua.script_file(argv[1]);
 
 	lua.script("setup()");
