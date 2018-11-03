@@ -265,6 +265,8 @@ void incSetup()
 {
 	if(renderer_type == "normal")
 		renderer = std::make_unique<NormalRenderer>();
+	else if(renderer_type == "path")
+		renderer = std::make_unique<PathRenderer>();
 	else
 		throw IncError("Renderer type " + renderer_type + "is not supported.");
 	auto node = std::make_unique<SceneNode>();

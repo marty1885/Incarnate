@@ -8,6 +8,7 @@
 #include <Incarnate/Ray.hpp>
 #include <Incarnate/FrameBuffer.hpp>
 #include <Incarnate/Renderer.hpp>
+#include <Incarnate/Texture.hpp>
 
 #include <stdint.h>
 

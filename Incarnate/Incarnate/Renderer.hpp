@@ -69,4 +69,11 @@ public:
 	void render(FrameBuffer& frame_buffer, Scene* scene, const PerspectiveCamera& camera) override;
 };
 
+class PathRenderer : public Renderer
+{
+public:
+	void render(FrameBuffer& frame_buffer, Scene* scene, const PerspectiveCamera& camera) override;
+};
+
+
 }
